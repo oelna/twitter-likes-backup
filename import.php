@@ -32,6 +32,10 @@
 		$config['verbose'] = true;
 	}
 
+	if(php_sapi_name() !== 'cli') {
+		$config['verbose'] = true;
+	}
+
 	$status = [
 		'length' => -1,
 		'start' => 0,
