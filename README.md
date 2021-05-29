@@ -39,6 +39,8 @@ The files will be named after the tweet ID and, if possible, have a modification
 
 I included an early alpha release of a frontend to browse the tweets, `index.php`. In its current state it only supports searching for a term and doesn't have any pagination support, so handle with care!
 
+<img width="794" alt="Screen Shot 2021-05-30 at 00 33 31" src="https://user-images.githubusercontent.com/1279725/120086348-b3fe6b00-c0de-11eb-9d6e-42b0ee03a855.png">
+
 ## Ending remarks
 
 That's it. This is everything I can tell you.
