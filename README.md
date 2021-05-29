@@ -35,6 +35,10 @@ The result after a full cycle should be a directory ("folder") `tweets`, which c
 
 The files will be named after the tweet ID and, if possible, have a modification date of the tweet post timestamp. That can help looking up things. But in case the files are touched in any way, the mod date will be lost obviously.
 
+## Browsing
+
+I included an early alpha release of a frontend to browse the tweets, `index.php`. In its current state it only supports searching for a term and doesn't have any pagination support, so handle with care!
+
 ## Ending remarks
 
 That's it. This is everything I can tell you.
