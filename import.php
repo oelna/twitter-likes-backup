@@ -33,6 +33,7 @@
 		'url' => 'https://api.twitter.com/1.1/favorites/list.json',
 		'max_iterations' => 2, // how many API requests to make in sequence
 		'verbose' => false,
+		'reset_enabled' => false, // watch out, if true, anyone with the url can erase all your JSON files!
 
 		'oauth_access_token' => '',
 		'oauth_access_token_secret' => '',
@@ -62,7 +63,7 @@
 
 	echo2(EOL);
 
-	if(isset($_GET['reset']) || (array_key_exists('r', $options) || array_key_exists('reset', $options))) {
+	if(isset($config['reset_enabled']) && (isset($_GET['reset']) || (array_key_exists('r', $options) || array_key_exists('reset', $options)))) {
 
 		unlink(STATUS_FILE);
 
