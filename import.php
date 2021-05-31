@@ -9,10 +9,22 @@
 	define('EOL', $eol);
 	define('DS', DIRECTORY_SEPARATOR);
 	define('TWEETS', __DIR__.DS.'tweets');
+	define('STATUS_FILE', __DIR__.DS.'status.json');
 
 	// handle CLI options
-	$shortopts  = 'v';
-	$longopts  = ['verbose'];
+	$shortopts  = '';
+	// $shortopts .= 'f:';  // Required value
+	// $shortopts .= 'a::'; // Optional value
+	$shortopts .= 'v';      // No value
+	$shortopts .= 'r';
+
+	$longopts  = array(
+		//'required:',      // Required value
+		//'optional::',     // Optional value
+		'verbose',          // No value
+		'reset'
+	);
+
 	$options = getopt($shortopts, $longopts);
 
 	$config = [
@@ -32,20 +44,16 @@
 		$config['verbose'] = true;
 	}
 
-	if(php_sapi_name() !== 'cli') {
-		$config['verbose'] = true;
-	}
-
 	$status = [
 		'length' => -1,
 		'start' => 0,
-		'next' => -1,
+		'next' => '-1',
 
 		'current_iteration' => 0,
 
 		'tweets' => [],
 
-		'max_id' => -1,
+		'max_id' => '-1',
 		'total_tweets_received' => 0,
 		'total_tweets_imported' => 0,
 		'earliest_date' => time(),
@@ -54,14 +62,15 @@
 
 	echo2(EOL);
 
-	if(isset($_GET['reset'])) {
+	if(isset($_GET['reset']) || (array_key_exists('r', $options) || array_key_exists('reset', $options))) {
 
-		unlink(__DIR__.DS.'max_id.txt');
+		unlink(STATUS_FILE);
 
 		array_map('unlink', glob(TWEETS."/*.json"));
 		rmdir(TWEETS);
 
-		echo2('reset the import progress. <a href="./backup.php">start over</a>'.EOL);
+		$script_url = basename($_SERVER['REQUEST_URI'], '?'.$_SERVER['QUERY_STRING']);
+		echo2('reset the import progress. <a href="./'.$script_url.'">start over</a>'.EOL);
 		exit();
 	}
 
@@ -69,8 +78,9 @@
 		mkdir(TWEETS);
 	}
 
-	if(file_exists(__DIR__.DS.'max_id.txt')) {
-		$status['max_id'] = (int) file_get_contents(__DIR__.DS.'max_id.txt');
+	if(file_exists(STATUS_FILE)) {
+		$status_json = json_decode(file_get_contents(STATUS_FILE), true);
+		$status['max_id'] = $status_json['max_id'];
 	}
 
 	function echo2($str) {
@@ -98,11 +108,11 @@
 		return $r;
 	}
 
-	function makeRequest($url, $max_id = -1) {
+	function makeRequest($url, $max_id = '-1') {
 		global $config;
 		global $status;
 
-		$curl_url = $url . '?screen_name='.ltrim($config['screen_name'], '@').'&count='.$config['count'];
+		$curl_url = $url . '?screen_name='.$config['screen_name'].'&count='.$config['count'];
 
 		$oauth = array(
 			'screen_name' => $config['screen_name'],
@@ -115,7 +125,7 @@
 			'oauth_version' => '1.0'
 		);
 
-		if($max_id > -1) {
+		if($max_id != '-1') {
 			$oauth['max_id'] = $max_id;
 			$curl_url .= '&max_id='.$max_id;
 		}
@@ -157,7 +167,7 @@
 		global $config;
 
 		if ($status['length'] != 1 && $status['current_iteration'] < $config['max_iterations']) {
-			if ($status['next'] != -1) {
+			if ($status['next'] != '-1') {
 				$status['max_id'] = $status['next'];
 			}
 
@@ -203,7 +213,10 @@
 			$status['start'] += $status['length'] - 1;
 
 			$status['current_iteration'] += 1;
-			file_put_contents(__DIR__.DS.'max_id.txt', $status['next']);
+			file_put_contents(STATUS_FILE, json_encode([
+					'max_id' => $status['next'],
+					'last_update' => date('Y-m-d H:i:s')
+				], JSON_PRETTY_PRINT));
 			loadAll($url);
 		} else {
 			
@@ -211,8 +224,11 @@
 			echo2($status['total_tweets_imported'].' tweets imported in total'.EOL);
 			if($status['total_tweets_received'] <= 1) {
 				// reached the last tweet? invalidate max_id limit
-				$status['max_id'] = -1;
-				file_put_contents(__DIR__.DS.'max_id.txt', $status['max_id']);
+				$status['max_id'] = '-1';
+				file_put_contents(STATUS_FILE, json_encode([
+					'max_id' => $status['max_id'],
+					'last_update' => date('Y-m-d H:i:s')
+				], JSON_PRETTY_PRINT));
 				echo2('reached the beginning of time. reset the max_id.'.EOL);
 			} else {
 				echo2('earliest tweet imported: '.date('Y-m-d H:i:s', $status['earliest_date']).EOL);
