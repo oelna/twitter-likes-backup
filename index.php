@@ -7,6 +7,7 @@
 
 	define('DS', DIRECTORY_SEPARATOR);
 	define('TWEETS', __DIR__.DS.'tweets');
+	define('STATUS_FILE', __DIR__.DS.'status.json');
 
 	$config = [
 		'items_per_page' => 8
@@ -27,6 +28,12 @@
 		$tweets = array_reverse($tweets);
 
 		return $tweets;
+	}
+
+	$last_update = 0;
+	if(file_exists(STATUS_FILE)) {
+		$status_json = json_decode(file_get_contents(STATUS_FILE), true);
+		$last_update = $status_json['last_update'];
 	}
 
 ?><!DOCTYPE html>
@@ -295,6 +302,10 @@
 		</ul>
 
 		<?= $pagination ?>
+
+		<footer>
+			<p>Last updated: <time class="last-crawl" datetime="<?= $last_update ?>"><?= $last_update > 0 ? $last_update : 'never' ?></time></p>
+		</footer>
 	</div>
 </body>
 </html>
